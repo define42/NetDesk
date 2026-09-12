@@ -161,9 +161,14 @@ def verify_filesystem(entries, contents, kernel_version):
         "usr/bin/xfce4-session", "usr/bin/xfwm4", "usr/bin/xfce4-panel",
         "usr/bin/xfdesktop", "usr/bin/xfce4-terminal", "usr/bin/Thunar",
         "usr/bin/xfce4-keyboard-settings", "usr/bin/xfsettingsd",
+        "usr/bin/pulseaudio", "usr/bin/pactl", "usr/bin/paplay",
+        "usr/bin/start-pulseaudio-x11", "usr/bin/pavucontrol",
         "usr/bin/xinit", "usr/bin/xauth", "usr/bin/xprop", "usr/bin/xrandr",
         "usr/bin/mcookie", "usr/bin/pgrep",
         "usr/bin/vim", "usr/bin/nano",
+        "usr/bin/libreoffice", "usr/lib/libreoffice/program/soffice.bin",
+        "usr/bin/lowriter", "usr/bin/localc", "usr/bin/loimpress",
+        "usr/bin/lodraw", "usr/bin/lobase", "usr/bin/lomath",
         "usr/bin/sudo", "usr/sbin/visudo", "usr/bin/pkexec",
         "usr/lib/polkit-1/polkitd", "usr/lib/xfce4/session/xfsm-shutdown-helper",
         "usr/local/sbin/shutdown", "sbin/poweroff", "sbin/reboot",
@@ -178,7 +183,24 @@ def verify_filesystem(entries, contents, kernel_version):
     for name in ("xfce4-panel", "keyboard-layout"):
         require(f"etc/xdg/xfce4/xfconf/xfce-perchannel-xml/{name}.xml" in entries,
                 f"missing XFCE {name} configuration")
+    for component in ("startcenter", "writer", "calc", "impress", "draw", "base", "math"):
+        name = f"usr/share/applications/libreoffice-{component}.desktop"
+        entry = resolve(entries, name)
+        require(stat.S_ISREG(entry.mode) and entry.size > 0, f"missing LibreOffice launcher /{name}")
+    gtk_plugin = resolve(entries, "usr/lib/libreoffice/program/libvclplug_gtk3lo.so")
+    require(stat.S_ISREG(gtk_plugin.mode) and gtk_plugin.size > 0,
+            "missing LibreOffice GTK integration")
     require("usr/share/X11/xkb/rules/evdev.xml" in entries, "missing keyboard layout registry")
+    for name in ("etc/xdg/autostart/pulseaudio.desktop",
+                 "etc/alsa/conf.d/99-pulseaudio-default.conf",
+                 "usr/lib/alsa-lib/libasound_module_pcm_pulse.so",
+                 "usr/lib/pulseaudio/modules/module-alsa-card.so",
+                 "usr/lib/pulseaudio/modules/module-udev-detect.so",
+                 "usr/lib/xfce4/panel/plugins/libpulseaudio-plugin.so",
+                 "usr/share/xfce4/panel/plugins/pulseaudio.desktop",
+                 "usr/share/applications/org.pulseaudio.pavucontrol.desktop"):
+        entry = resolve(entries, name)
+        require(stat.S_ISREG(entry.mode) and entry.size > 0, f"missing audio component /{name}")
     for name in ("etc/polkit-1/rules.d/49-netdesk-power.rules",
                  "usr/share/polkit-1/actions/org.xfce.session.policy"):
         entry = resolve(entries, name)

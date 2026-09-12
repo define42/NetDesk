@@ -7,6 +7,7 @@
     <property name="EnableInputFeedbackSounds" type="bool" value="false"/>
   </property>
   <property name="Gtk" type="empty">
+    <property name="MenuImages" type="bool" value="true"/>
     <property name="FontName" type="string" value="DejaVu Sans 10"/>
     <property name="MonospaceFontName" type="string" value="DejaVu Sans Mono 10"/>
     <property name="DecorationLayout" type="string" value="menu:minimize,maximize,close"/>

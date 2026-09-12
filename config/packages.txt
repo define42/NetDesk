@@ -38,14 +38,24 @@ xfce4-settings
 xfce4-appfinder
 xfce4-terminal
 xfce4-xkb-plugin
+xfce4-pulseaudio-plugin
 xfwm4
 xfdesktop
 thunar
 exo
 adwaita-xfce-icon-theme
 adw-gtk3
+# Per-user audio with hardware discovery and routing for ALSA applications.
+pulseaudio
+pulseaudio-alsa
+pulseaudio-utils
+alsa-plugins-pulse
+pavucontrol
 chromium
 freerdp
+# Office suite with GTK integration for XFCE.
+libreoffice
+libreoffice-gtk
 vim
 nano
 font-dejavu

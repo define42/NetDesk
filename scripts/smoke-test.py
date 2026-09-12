@@ -91,6 +91,9 @@ def main():
                 "-device", "virtio-vga", "-vga", "none",
                 "-device", "virtio-net-pci,netdev=net0,bootindex=1",
                 "-netdev", f"user,id=net0,bootfile={url}",
+                # Exercise guest audio controls without using the host sound server.
+                "-audiodev", "none,id=audio0", "-device", "ich9-intel-hda,id=hda",
+                "-device", "hda-duplex,bus=hda.0,audiodev=audio0",
                 "-device", "qemu-xhci", "-device", "usb-tablet",
                 "-device", "virtio-rng-pci", "-display", "none",
                 "-serial", f"file:{serial_path}", "-monitor", "none",

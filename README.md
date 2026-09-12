@@ -1,8 +1,9 @@
 # NetDesk
 
 NetDesk is a stateless Linux desktop that boots from the network into XFCE,
-with Chromium, FreeRDP, a file manager, and a terminal. It uses Alpine Linux and
-runs entirely from RAM. No installation, local disk, or persistent storage is required.
+with Chromium, FreeRDP, LibreOffice, a file manager, and a terminal. It uses Alpine
+Linux and runs entirely from RAM. No installation, local disk, or persistent
+storage is required.
 
 The build produces one deployable file: **`dist/netdesk.efi`**. This x86-64 UEFI
 executable contains the Linux kernel, initramfs, complete root filesystem,
@@ -65,6 +66,10 @@ applications and settings. Remote Desktop prompts for the server and username
 in a terminal; FreeRDP handles the password and server certificate prompt. Reboot
 to reset the session and receive an updated image.
 
+LibreOffice is available under **Applications → Office** for documents,
+spreadsheets, and presentations. You can also run `libreoffice` from Terminal.
+Save documents to external storage or a remote service to keep them after reboot.
+
 ## Choose a keyboard layout
 
 Open **Keyboard** from the top panel, then select the **Layout** tab. Leave
@@ -77,6 +82,17 @@ additional layouts in this window. See the
 [XFCE keyboard settings documentation](https://docs.xfce.org/xfce/xfce4-settings/4.20/keyboard).
 Your selection lasts for the current boot; restarting NetDesk restores the
 defaults embedded in the image.
+
+## Audio volume
+
+Click the speaker icon next to the clock to adjust the volume or mute audio.
+You can also scroll over the icon or use your keyboard's volume and mute keys.
+Choose **Audio mixer** from the speaker menu to open Volume Control, where you
+can select output devices, adjust microphone levels, and change application
+volumes. You can also launch it with `pavucontrol` from Terminal.
+
+Audio uses PulseAudio in the desktop session and detects supported ALSA devices.
+Volume and device choices reset when NetDesk reboots.
 
 ## Administration and power
 
