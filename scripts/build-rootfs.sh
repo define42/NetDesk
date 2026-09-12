@@ -37,13 +37,19 @@ apk --root "$root" --initdb --no-cache add "$@"
 
 chroot "$root" addgroup -g 1000 netdesk
 chroot "$root" adduser -D -u 1000 -G netdesk -s /bin/sh netdesk
-for group in seat audio; do
+for group in audio video; do
     chroot "$root" addgroup netdesk "$group"
 done
 chroot "$root" passwd -l root
 # adduser -D already creates a locked netdesk password.
 cp -a --no-preserve=ownership /src/overlay/. "$root/"
 chmod 0755 "$root/init" "$root"/etc/init.d/netdesk-* "$root"/usr/local/bin/netdesk-*
+chmod 0755 "$root/usr/local/sbin/shutdown"
+chmod 0440 "$root/etc/sudoers.d/netdesk"
+chmod 0644 "$root/etc/polkit-1/rules.d/49-netdesk-power.rules"
+chroot "$root" visudo -c
+# Verify passwordless elevation for the same locked account used by the desktop.
+[ "$(chroot "$root" su-exec netdesk sudo -n /usr/bin/id -u)" = 0 ]
 chroot "$root" chown -R netdesk:netdesk /home/netdesk
 
 # Explicit runlevels avoid Alpine disk mounts, swap and login prompts.
@@ -56,7 +62,7 @@ done
 for service in hostname modules sysctl bootmisc localmount loopback; do
     chroot "$root" rc-update add "$service" boot
 done
-for service in dbus seatd dhcpcd netdesk-desktop; do
+for service in dbus dhcpcd netdesk-desktop; do
     chroot "$root" rc-update add "$service" default
 done
 chroot "$root" rc-update add killprocs shutdown

@@ -1,0 +1,8 @@
+// This desktop starts through xinit, so no logind active-session metadata exists.
+// Authorize XFCE's packaged power helper only for the NetDesk desktop account.
+polkit.addRule(function(action, subject) {
+    if (subject.user === "netdesk" &&
+        action.id === "org.xfce.session.xfsm-shutdown-helper") {
+        return polkit.Result.YES;
+    }
+});

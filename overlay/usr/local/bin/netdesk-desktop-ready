@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+for process in xfce4-session xfwm4 xfce4-panel xfdesktop xfsettingsd; do
+    pgrep -u 1000 -x "$process" >/dev/null || exit 1
+done
+
+monitors=$(xrandr --listactivemonitors)
+printf '%s\n' "$monitors" | \
+    awk 'NR == 1 && $1 == "Monitors:" && $2 > 0 { found = 1 } END { exit !found }'
+
+wm_window=$(xprop -root _NET_SUPPORTING_WM_CHECK | \
+    sed -n 's/.*window id # \(0x[0-9a-fA-F]*\)$/\1/p')
+[ -n "$wm_window" ] || exit 1
+xprop -id "$wm_window" _NET_WM_NAME | grep -qi '"xfwm4"'

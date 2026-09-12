@@ -107,7 +107,7 @@ def main():
                             raise RuntimeError("guest kernel panicked")
                         if "NetDesk desktop ready" in serial and ImageServer.downloaded.is_set():
                             screenshot(qmp, screenshot_path)
-                            print(f"PASS: HTTP-loaded EFI reached a Wayland desktop; logs and screenshot in {logs}.")
+                            print(f"PASS: HTTP-loaded EFI reached the XFCE desktop; logs and screenshot in {logs}.")
                             return
                         if process.poll() is not None:
                             raise RuntimeError(f"QEMU exited with status {process.returncode}")

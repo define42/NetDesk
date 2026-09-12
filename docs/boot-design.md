@@ -16,17 +16,36 @@ arguments, release identity, and kernel version matching the packaged modules.
 1. Firmware or iPXE downloads the EFI image into memory and executes it.
 2. The EFI stub passes the embedded kernel and initramfs to Linux.
 3. Linux unpacks the filesystem into RAM and runs `/init` as PID 1.
-4. `/init` mounts the kernel interfaces and hands control to `/sbin/init`.
-5. OpenRC starts devices, networking, and the desktop session automatically.
+4. `/init` gives the same RAM filesystem a parent mount, mounts the kernel
+   interfaces, and hands control to `/sbin/init`.
+5. OpenRC starts devices, networking, Xorg, and the XFCE desktop automatically.
 
 The initial root filesystem is the running system. There is no second root image
-to download, no root partition to discover, and no need to switch root. The Linux
+to download and no root partition to discover. A bind mount, move mount, and
+`chroot` align the process root with the mounted root before normal startup.
+This lets sandboxed GTK image loaders switch roots inside their private mount
+namespaces. It does not copy the filesystem or introduce disk storage. The Linux
 [initramfs documentation](https://www.kernel.org/doc/html/latest/filesystems/ramfs-rootfs-initramfs.html)
 describes this complete-root-filesystem model.
 
+The desktop runs XFCE on Xorg. OpenRC supervises `netdesk-xserver`, which starts
+Xorg through `xinit` with a fresh Xauthority cookie and TCP access disabled. Xorg
+owns the display devices as root; `netdesk-session` drops to UID 1000 before
+starting the session D-Bus and `startxfce4`. There is no display manager or login
+screen. Chromium and desktop applications run as the unprivileged `netdesk` user.
+
+The `netdesk` account has passwordless sudo for administrative commands. The
+build validates the root-owned sudoers policy and checks elevation as that
+account. XFCE's native power actions use its packaged shutdown helper through
+polkit, with authorization limited to the `netdesk` user and that helper's
+action. Alpine's helper invokes BusyBox `poweroff` or `reboot`, which ask PID 1
+to run the OpenRC shutdown sequence. No alternate init system is needed.
+
 Changes live in memory and disappear on reboot. Applications still need network
 connectivity to reach websites and remote desktops; the desktop software itself
-is already in the EFI image. Version one starts without authentication.
+is already in the EFI image. XFCE's native Keyboard settings change layouts and
+variants during the session; reboot restores the image's default English (US)
+layout. Version one starts without authentication.
 
 ## Serve the image
 

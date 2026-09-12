@@ -1,0 +1,39 @@
+#!/bin/sh
+set -eu
+
+usage() {
+    printf '%s\n' \
+        'Usage: shutdown {-h|-P|-r} {now|+0}' \
+        '  -h, -P  Shut down and power off immediately' \
+        '  -r      Reboot immediately' \
+        '  --help  Show this help' \
+        'Scheduled shutdowns are not supported.'
+}
+
+if [ "$#" -eq 1 ] && [ "$1" = --help ]; then
+    usage
+    exit 0
+fi
+
+if [ "$#" -ne 2 ]; then
+    usage >&2
+    exit 2
+fi
+
+case "$2" in
+    now|+0) ;;
+    *) printf '%s\n' 'Only immediate shutdowns are supported; specify now or +0.' >&2; exit 2 ;;
+esac
+
+case "$1" in
+    -h|-P) command=/sbin/poweroff ;;
+    -r) command=/sbin/reboot ;;
+    *) printf '%s\n' "Unsupported shutdown option: $1" >&2; usage >&2; exit 2 ;;
+esac
+
+if [ "$(id -u)" -ne 0 ]; then
+    printf '%s\n' 'Run this command with sudo to shut down or reboot.' >&2
+    exit 1
+fi
+
+exec "$command"

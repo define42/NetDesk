@@ -156,16 +156,41 @@ def resolve(entries, name):
 
 def verify_filesystem(entries, contents, kernel_version):
     executable_paths = (
-        "init", "sbin/init", "sbin/openrc", "usr/bin/weston", "usr/bin/chromium",
-        "usr/lib/chromium/chromium", "usr/bin/xfreerdp3", "usr/bin/Xwayland",
+        "init", "sbin/init", "sbin/openrc", "usr/bin/startxfce4", "usr/bin/chromium",
+        "usr/lib/chromium/chromium", "usr/bin/xfreerdp3", "usr/bin/Xorg",
+        "usr/bin/xfce4-session", "usr/bin/xfwm4", "usr/bin/xfce4-panel",
+        "usr/bin/xfdesktop", "usr/bin/xfce4-terminal", "usr/bin/Thunar",
+        "usr/bin/xfce4-keyboard-settings", "usr/bin/xfsettingsd",
+        "usr/bin/xinit", "usr/bin/xauth", "usr/bin/xprop", "usr/bin/xrandr",
+        "usr/bin/mcookie", "usr/bin/pgrep",
+        "usr/bin/sudo", "usr/sbin/visudo", "usr/bin/pkexec",
+        "usr/lib/polkit-1/polkitd", "usr/lib/xfce4/session/xfsm-shutdown-helper",
+        "usr/local/sbin/shutdown", "sbin/poweroff", "sbin/reboot",
         "etc/init.d/netdesk-desktop", "usr/local/bin/netdesk-session",
+        "usr/local/bin/netdesk-xserver", "usr/local/bin/netdesk-desktop-ready",
         "usr/local/bin/netdesk-browser", "usr/local/bin/netdesk-remote-desktop",
         "usr/local/bin/netdesk-rdp",
     )
     for name in executable_paths:
         entry = resolve(entries, name)
         require(stat.S_ISREG(entry.mode) and entry.mode & 0o111, f"/{name} is not executable")
-    require("etc/xdg/weston/weston.ini" in entries, "missing Weston desktop configuration")
+    for name in ("xfce4-panel", "keyboard-layout"):
+        require(f"etc/xdg/xfce4/xfconf/xfce-perchannel-xml/{name}.xml" in entries,
+                f"missing XFCE {name} configuration")
+    require("usr/share/X11/xkb/rules/evdev.xml" in entries, "missing keyboard layout registry")
+    for name in ("etc/polkit-1/rules.d/49-netdesk-power.rules",
+                 "usr/share/polkit-1/actions/org.xfce.session.policy"):
+        entry = resolve(entries, name)
+        require(stat.S_ISREG(entry.mode) and entry.uid == 0 and not entry.mode & 0o022,
+                f"/{name} must be a root-owned power policy, not writable by other users")
+    sudoers = resolve(entries, "etc/sudoers.d/netdesk")
+    require(stat.S_ISREG(sudoers.mode) and sudoers.uid == sudoers.gid == 0
+            and stat.S_IMODE(sudoers.mode) == 0o440,
+            "NetDesk sudoers policy must be owned by root with mode 0440")
+    for name in ("usr/bin/sudo", "usr/bin/pkexec"):
+        entry = resolve(entries, name)
+        require(entry.uid == 0 and entry.mode & stat.S_ISUID,
+                f"/{name} must be a setuid root executable")
 
     console = resolve(entries, "dev/console")
     require(stat.S_ISCHR(console.mode) and (console.device_major, console.device_minor) == (5, 1),
@@ -199,6 +224,9 @@ def verify_filesystem(entries, contents, kernel_version):
     inittab = "\n".join(line for line in contents.get("etc/inittab", "").splitlines()
                         if not line.lstrip().startswith("#"))
     require("exec /sbin/init" in init, "/init must start the embedded init system")
+    for command in ("mount --bind / /newroot", "cd /newroot", "mount --move . /",
+                    "exec chroot . /init --root-mounted"):
+        require(command in init, "/init must prepare the RAM root for application sandboxes")
     require("/sbin/openrc sysinit" in inittab and "/sbin/openrc default" in inittab,
             "inittab must start the OpenRC desktop runlevels")
     require(not re.search(r"\b(?:switch_root|pivot_root)\b", init + inittab),
@@ -208,6 +236,9 @@ def verify_filesystem(entries, contents, kernel_version):
     for line in init.splitlines():
         words = shlex.split(line, comments=True)
         if words and words[0] == "mount":
+            if words in (["mount", "--bind", "/", "/newroot"],
+                         ["mount", "--move", ".", "/"]):
+                continue
             require("-t" in words and words.index("-t") + 1 < len(words),
                     "/init has an untyped filesystem mount")
             require(words[words.index("-t") + 1] in {"proc", "sysfs", "devtmpfs", "devpts", "tmpfs"},

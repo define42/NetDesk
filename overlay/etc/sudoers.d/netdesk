@@ -1,0 +1,2 @@
+# The shared NetDesk desktop has no password in version one.
+netdesk ALL=(ALL:ALL) NOPASSWD: ALL

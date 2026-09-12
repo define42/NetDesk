@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Remote Desktop
+Comment=Connect to a remote desktop with FreeRDP
+Exec=/usr/local/bin/netdesk-remote-desktop
+Icon=network-server
+Terminal=false
+StartupNotify=true
+Categories=Network;RemoteAccess;

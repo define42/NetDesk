@@ -1,0 +1,28 @@
+#!/bin/sh
+set -eu
+
+if [ "$(id -u)" -ne 0 ]; then
+    printf '%s\n' 'The X server must be started by the NetDesk desktop service.' >&2
+    exit 1
+fi
+
+umask 077
+server_authority=/run/netdesk/Xauthority
+client_authority=/run/user/1000/Xauthority
+: > "$server_authority"
+# Remove and create the user file as netdesk so a replaced file or symlink can
+# never turn cookie setup into a privileged write to another location.
+su-exec netdesk:netdesk rm -f "$client_authority"
+cookie=$(mcookie)
+printf 'add :0 MIT-MAGIC-COOKIE-1 %s\n' "$cookie" | \
+    xauth -f "$server_authority" source -
+printf 'add :0 MIT-MAGIC-COOKIE-1 %s\n' "$cookie" | \
+    su-exec netdesk:netdesk xauth -f "$client_authority" source -
+unset cookie
+export XAUTHORITY="$server_authority"
+
+# Only the X server retains root privileges. The client script switches to
+# netdesk before starting XFCE, and the server accepts local connections only.
+exec xinit /usr/local/bin/netdesk-session -- /usr/bin/Xorg :0 vt7 \
+    -nolisten tcp -auth "$server_authority" -noreset \
+    -logfile /var/log/Xorg.0.log

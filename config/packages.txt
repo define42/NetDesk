@@ -14,18 +14,36 @@ dbus
 dbus-openrc
 dhcpcd
 dhcpcd-openrc
-seatd
-seatd-openrc
 su-exec
+# The desktop account has passwordless administration and native power actions.
+sudo
+polkit
 mesa-dri-gallium
 mesa-egl
-weston
-weston-backend-drm
-weston-shell-desktop
-weston-terminal
-weston-xwayland
-xwayland
-wayland-utils
+# Xorg starts through OpenRC; the complete XFCE session runs as netdesk.
+xorg-server
+xf86-input-libinput
+xinit
+xauth
+mcookie
+xprop
+xrandr
+procps-ng
+xkeyboard-config
+setxkbmap
+# Select the desktop components directly; no media thumbnailer is required.
+xfce4-session
+xfce4-panel
+xfce4-settings
+xfce4-appfinder
+xfce4-terminal
+xfce4-xkb-plugin
+xfwm4
+xfdesktop
+thunar
+exo
+adwaita-xfce-icon-theme
+adw-gtk3
 chromium
 freerdp
 font-dejavu

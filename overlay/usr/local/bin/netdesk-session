@@ -1,6 +1,17 @@
 #!/bin/sh
 set -eu
 
+# xinit starts this client as root. Drop privileges and the root environment
+# before loading any user-controlled desktop configuration or applications.
+if [ "$(id -u)" -eq 0 ]; then
+    # A user-only su-exec argument preserves the account's audio/video groups.
+    exec su-exec netdesk env -i \
+        PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+        HOME=/home/netdesk USER=netdesk LOGNAME=netdesk LANG=C.UTF-8 \
+        DISPLAY=:0 XAUTHORITY=/run/user/1000/Xauthority \
+        /usr/local/bin/netdesk-session
+fi
+
 if [ "$(id -u)" -ne 1000 ]; then
     printf '%s\n' 'NetDesk desktop must run as the netdesk user (UID 1000).' >&2
     exit 1
@@ -12,12 +23,11 @@ export XDG_RUNTIME_DIR=/run/user/1000
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=Weston
-export LIBSEAT_BACKEND=seatd
+export XDG_SESSION_TYPE=x11 XDG_CURRENT_DESKTOP=XFCE
+export XDG_SESSION_DESKTOP=xfce DESKTOP_SESSION=xfce
+export GDK_BACKEND=x11
 umask 077
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
 cd "$HOME"
 
-exec dbus-run-session -- weston \
-    --config=/etc/xdg/weston/weston.ini \
-    --socket=wayland-0 --log="$XDG_RUNTIME_DIR/weston.log"
+exec dbus-run-session -- startxfce4

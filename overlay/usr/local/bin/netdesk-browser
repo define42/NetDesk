@@ -2,5 +2,5 @@
 set -eu
 
 # Keep Chromium's sandbox enabled and store its entire profile in volatile RAM.
-exec chromium --ozone-platform=wayland --no-first-run \
+exec chromium --ozone-platform=x11 --no-first-run \
     --user-data-dir="$HOME/.config/chromium" "$@"

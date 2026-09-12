@@ -1,20 +1,24 @@
 # NetDesk
 
-NetDesk is a stateless Linux desktop that boots from the network into Weston,
-with Chromium, FreeRDP, and a terminal. It uses Alpine Linux and runs entirely
-from RAM. No installation, local disk, or persistent storage is required.
+NetDesk is a stateless Linux desktop that boots from the network into XFCE,
+with Chromium, FreeRDP, a file manager, and a terminal. It uses Alpine Linux and
+runs entirely from RAM. No installation, local disk, or persistent storage is required.
 
 The build produces one deployable file: **`dist/netdesk.efi`**. This x86-64 UEFI
 executable contains the Linux kernel, initramfs, complete root filesystem,
 applications, drivers, and configuration. It can be loaded by UEFI iPXE or
 UEFI HTTP Boot; it does not fetch a separate root filesystem at startup.
 
-Version one opens the desktop automatically as the unprivileged `netdesk` user.
+Version one opens the desktop automatically as the `netdesk` user.
 Chromium retains its sandbox. There is no login screen, local password, or remote
 management service. The root account is locked. All settings, browser data,
 downloads, and remote desktop credentials disappear when the machine reboots.
 Authentication, centralized configuration, and user-specific access are future
 work.
+
+The shared `netdesk` account can run administrative commands with passwordless
+`sudo`. Applications normally run without root privileges; use `sudo` when an
+administrative action is needed.
 
 ## Build
 
@@ -55,18 +59,50 @@ policy to use that same URL. Replace the example address with your server.
 See [boot design and server configuration](docs/boot-design.md) for the nginx
 example, DHCP options, and firmware limitations.
 
-After startup, use Weston's top panel to open Chromium, Remote Desktop, or the
-terminal. Remote Desktop prompts for the server and username in a terminal;
-FreeRDP handles the password and server certificate prompt. Reboot to reset the
-session and receive an updated image.
+After startup, use XFCE's top panel to open Chromium, Remote Desktop, the
+terminal, or Keyboard settings. The Applications menu provides the other desktop
+applications and settings. Remote Desktop prompts for the server and username
+in a terminal; FreeRDP handles the password and server certificate prompt. Reboot
+to reset the session and receive an updated image.
+
+## Choose a keyboard layout
+
+Open **Keyboard** from the top panel, then select the **Layout** tab. Leave
+**Use system defaults** disabled, select the current layout, and choose **Edit**
+to select your keyboard layout and optional variant. Changes apply immediately
+to the desktop. The default is English (US).
+
+XFCE also provides controls for key repeat, shortcuts, keyboard model, and
+additional layouts in this window. See the
+[XFCE keyboard settings documentation](https://docs.xfce.org/xfce/xfce4-settings/4.20/keyboard).
+Your selection lasts for the current boot; restarting NetDesk restores the
+defaults embedded in the image.
+
+## Administration and power
+
+Use **Power → Shut Down** or **Power → Restart** at the right end of the panel.
+XFCE shows its standard confirmation dialog before ending the session. These
+actions are also available from the Applications menu's logout dialog.
+
+The `netdesk` account has passwordless sudo. For example, in Terminal:
+
+```sh
+sudo id
+sudo shutdown -h now
+sudo reboot
+```
+
+`sudo poweroff` also shuts down, and `sudo shutdown -r now` restarts. NetDesk's
+`shutdown` command supports immediate actions with `now` or `+0`; scheduled
+shutdown is not implemented. Shutdown and reboot discard all session data.
 
 ## Customize
 
 - [`config/packages.txt`](config/packages.txt): desktop applications, kernel,
   drivers, and selected firmware. Add packages from Alpine's enabled repositories.
 - [`overlay/`](overlay/): configuration and scripts copied into the root filesystem.
-- [`overlay/etc/xdg/weston/weston.ini`](overlay/etc/xdg/weston/weston.ini): panel,
-  launchers, display settings, and US keyboard layout.
+- [`overlay/etc/xdg/xfce4/`](overlay/etc/xdg/xfce4/): XFCE panel, desktop, and
+  keyboard defaults.
 - [`config/cmdline`](config/cmdline): embedded kernel arguments, including serial
   console output for diagnostics.
 
@@ -87,11 +123,12 @@ make smoke
 
 `verify` inspects the EFI sections and embedded filesystem. `smoke` serves the
 actual image over local HTTP and boots it with QEMU and UEFI firmware, without
-attaching a disk. It requires Weston to answer a Wayland output query before
-passing. KVM is used when available; otherwise QEMU uses software emulation.
+attaching a disk. It requires XFCE's window manager and panel to be running and
+Xorg to report an active display output before passing. KVM is used when
+available; otherwise QEMU uses software emulation.
 Local logs and a screenshot are kept under `build/`, outside the deployable
 output directory. `OVMF_CODE` and `OVMF_VARS` override firmware paths.
 
-On a running desktop, compositor diagnostics are in
-`/run/user/1000/weston.log` and session output is in
+On a running desktop, Xorg diagnostics are in
+`/var/log/Xorg.0.log` and session output is in
 `/var/log/netdesk-session.log`. Those logs also disappear on reboot.

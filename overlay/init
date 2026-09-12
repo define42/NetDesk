@@ -10,6 +10,19 @@ boot_failed() {
 trap boot_failed EXIT
 
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Give the RAM filesystem a parent mount and align the process and mount roots.
+# Sandboxed GTK image loaders need this topology for their own pivot_root.
+# No filesystem is copied, and every byte of the desktop still lives in RAM.
+if [ "${1:-}" != --root-mounted ]; then
+    mkdir -p /newroot
+    mount --bind / /newroot
+    cd /newroot
+    mount --move . /
+    exec chroot . /init --root-mounted
+fi
+rmdir /newroot
+
 mkdir -p /proc /sys /dev /run /tmp
 mount -t proc -o nosuid,nodev,noexec proc /proc
 mount -t sysfs -o nosuid,nodev,noexec sysfs /sys
