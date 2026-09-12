@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=FreeRDP
+Comment=Open a Remote Desktop connection file
+Exec=xfreerdp3 %f +force-console-callbacks
+TryExec=xfreerdp3
+Icon=network-server
+Terminal=true
+NoDisplay=true
+Categories=Network;RemoteAccess;
+MimeType=application/x-rdp;

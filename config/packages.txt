@@ -47,6 +47,9 @@ xfwm4
 xfdesktop
 thunar
 exo
+# Register file types and application handlers from the overlay.
+shared-mime-info
+desktop-file-utils
 adwaita-xfce-icon-theme
 adw-gtk3
 # Per-user audio with hardware discovery and routing for ALSA applications.

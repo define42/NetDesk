@@ -46,6 +46,9 @@ done
 chroot "$root" passwd -l root
 # adduser -D already creates a locked netdesk password.
 cp -a --no-preserve=ownership /src/overlay/. "$root/"
+# Package triggers ran before the overlay added its MIME types and launchers.
+chroot "$root" update-mime-database /usr/share/mime
+chroot "$root" update-desktop-database /usr/share/applications
 chmod 0755 "$root/init" "$root"/etc/init.d/netdesk-* "$root"/usr/local/bin/netdesk-*
 chmod 0755 "$root/usr/local/sbin/shutdown"
 chmod 0755 "$root/usr/local/sbin/netdesk-install-ca"

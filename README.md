@@ -66,6 +66,10 @@ applications and settings. Remote Desktop prompts for the server and username
 in a terminal; FreeRDP handles the password and server certificate prompt. Reboot
 to reset the session and receive an updated image.
 
+Open a downloaded `.rdp` file from the file manager or browser to launch
+`xfreerdp3` with the saved connection settings. A terminal opens for FreeRDP's
+password and server certificate prompts.
+
 LibreOffice is available under **Applications → Office** for documents,
 spreadsheets, and presentations. You can also run `libreoffice` from Terminal.
 Save documents to external storage or a remote service to keep them after reboot.
