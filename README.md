@@ -70,6 +70,26 @@ LibreOffice is available under **Applications → Office** for documents,
 spreadsheets, and presentations. You can also run `libreoffice` from Terminal.
 Save documents to external storage or a remote service to keep them after reboot.
 
+## Automatic root CA trust
+
+Announce your root CA certificate's full URL in DHCP option 43 as plain ASCII
+text, for example `http://192.0.2.10/certs/company-root.pem`. NetDesk downloads
+the certificate from that URL. HTTP and HTTPS are supported, with normal
+certificate verification for HTTPS. Serve a single self-signed CA certificate
+in PEM or DER format; NetDesk installs it for the system (including FreeRDP) and
+Chromium.
+
+Supply option 43 to NetDesk's Linux DHCP client; its lease is separate from
+firmware or iPXE. See
+[CA installation](docs/boot-design.md#automatic-root-ca-installation) for details.
+An absent or invalid URL, failed download, or invalid certificate leaves trust
+unchanged and the desktop working. Later DHCP renewals retry the provided URL
+until a root is installed. Trust lasts for the current boot and assumes a trusted
+DHCP/boot network.
+
+To disable this feature in a custom image, add `nohook netdesk-ca` to
+[`overlay/etc/dhcpcd.conf`](overlay/etc/dhcpcd.conf).
+
 ## Choose a keyboard layout
 
 Open **Keyboard** from the top panel, then select the **Layout** tab. Leave
@@ -138,9 +158,14 @@ On Ubuntu, install `shellcheck`, `python3`, `qemu-system-x86`, and `ovmf`, then 
 
 ```sh
 make check
+make test-ca
 make verify
 make smoke
 ```
+
+`test-ca` uses an isolated Docker container to check option 43 URL handling and
+CA installation with HTTP, TLS, and Chromium's NSS trust database. It does not
+change the host's trust stores.
 
 `verify` inspects the EFI sections and embedded filesystem. `smoke` serves the
 actual image over local HTTP and boots it with QEMU and UEFI firmware, without
@@ -152,4 +177,6 @@ output directory. `OVMF_CODE` and `OVMF_VARS` override firmware paths.
 
 On a running desktop, Xorg diagnostics are in
 `/var/log/Xorg.0.log` and session output is in
-`/var/log/netdesk-session.log`. Those logs also disappear on reboot.
+`/var/log/netdesk-session.log`. After a successful CA installation,
+`/run/netdesk-ca/installed` records the certificate's source URL. These files also
+disappear on reboot.

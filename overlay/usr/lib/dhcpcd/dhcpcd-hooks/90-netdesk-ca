@@ -1,0 +1,8 @@
+#!/bin/sh
+# Sourced by dhcpcd-run-hooks after DNS and hostname configuration.
+case "${reason:-}" in
+    BOUND|REBOOT|RENEW|REBIND)
+        # An absent or invalid CA must never fail DHCP configuration.
+        /usr/local/sbin/netdesk-install-ca || true
+        ;;
+esac

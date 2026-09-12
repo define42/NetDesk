@@ -22,6 +22,9 @@ cp /etc/apk/repositories "$root/etc/apk/repositories"
 cp /etc/resolv.conf "$root/etc/resolv.conf"
 mknod -m 600 "$root/dev/console" c 5 1
 mknod -m 666 "$root/dev/null" c 1 3
+# NSS needs the random devices when initializing Chromium's database in chroot.
+mknod -m 666 "$root/dev/random" c 1 8
+mknod -m 666 "$root/dev/urandom" c 1 9
 
 set --
 while IFS= read -r line || [ -n "$line" ]; do
@@ -45,12 +48,19 @@ chroot "$root" passwd -l root
 cp -a --no-preserve=ownership /src/overlay/. "$root/"
 chmod 0755 "$root/init" "$root"/etc/init.d/netdesk-* "$root"/usr/local/bin/netdesk-*
 chmod 0755 "$root/usr/local/sbin/shutdown"
+chmod 0755 "$root/usr/local/sbin/netdesk-install-ca"
+chmod 0644 "$root/usr/lib/dhcpcd/dhcpcd-hooks/90-netdesk-ca"
 chmod 0440 "$root/etc/sudoers.d/netdesk"
 chmod 0644 "$root/etc/polkit-1/rules.d/49-netdesk-power.rules"
 chroot "$root" visudo -c
 # Verify passwordless elevation for the same locked account used by the desktop.
 [ "$(chroot "$root" su-exec netdesk sudo -n /usr/bin/id -u)" = 0 ]
 chroot "$root" chown -R netdesk:netdesk /home/netdesk
+# Select Chromium's supported legacy NSS path before the browser can start.
+# This also supports leases arriving after the desktop is already running.
+chroot "$root" su-exec netdesk:netdesk mkdir -p /home/netdesk/.pki/nssdb
+chroot "$root" su-exec netdesk:netdesk certutil -N --empty-password \
+    -d sql:/home/netdesk/.pki/nssdb
 
 # Explicit runlevels avoid Alpine disk mounts, swap and login prompts.
 rm -rf "$root/etc/runlevels"

@@ -1,0 +1,118 @@
+#!/bin/sh
+# Called with the environment of a successful dhcpcd IPv4 lease.
+set -eu
+export LC_ALL=C
+umask 077
+
+state=/run/netdesk-ca
+certificate=/usr/local/share/ca-certificates/netdesk-boot-ca.crt
+nssdb=/home/netdesk/.pki/nssdb
+
+log() {
+    printf 'NetDesk CA: %s\n' "$*"
+}
+
+valid_url() {
+    case "$1" in http://*|https://*) ;; *) return 1 ;; esac
+    # Preserve the advertised path and query, but require a single URL without
+    # whitespace, control characters, or backslash escapes. Never evaluate it.
+    case "$1" in *[![:graph:]]*|*\\*) return 1 ;; esac
+    authority=${1#*://}
+    authority=${authority%%[/?#]*}
+    # Accept a hostname or IP and optional port, without embedded credentials.
+    case "$authority" in 0.0.0.0|255.255.255.255|'[::]') return 1 ;; esac
+    printf '%s\n' "$authority" | grep -Eq \
+        '^([a-zA-Z0-9][a-zA-Z0-9.-]*|\[[a-fA-F0-9:.]+\])(:[0-9]{1,5})?$'
+}
+
+[ "$(id -u)" -eq 0 ] || { log 'installation requires root' >&2; exit 1; }
+[ ! -f "$state/installed" ] || exit 0
+url=${new_netdesk_ca_url:-}
+if [ -z "$url" ]; then
+    log 'no certificate URL in DHCP option 43; continuing normally'
+    exit 0
+fi
+if ! valid_url "$url"; then
+    log 'invalid certificate URL in DHCP option 43; continuing normally'
+    exit 0
+fi
+
+mkdir -p "$state"
+# dhcpcd normally serializes hooks; also protect against manual invocation.
+mkdir "$state/lock" 2>/dev/null || exit 0
+work=
+trap 'if [ -n "$work" ]; then rm -rf "$work"; fi; rmdir "$state/lock"' EXIT
+trap 'exit 1' HUP INT TERM
+work=$(mktemp -d "$state/download.XXXXXXXX")
+
+validate_certificate() {
+    # Normalize either PEM or DER to one PEM certificate for Alpine and NSS.
+    if ! openssl x509 -inform PEM -in "$work/download" -out "$work/ca.crt" 2>/dev/null; then
+        openssl x509 -inform DER -in "$work/download" -out "$work/ca.crt" 2>/dev/null || return 1
+    elif [ "$(grep -c -- '-----BEGIN CERTIFICATE-----' "$work/download")" -ne 1 ]; then
+        return 1
+    fi
+    openssl x509 -in "$work/ca.crt" -noout -ext basicConstraints 2>/dev/null |
+        grep -q 'CA:TRUE' || return 1
+    subject=$(openssl x509 -in "$work/ca.crt" -noout -subject -nameopt RFC2253)
+    issuer=$(openssl x509 -in "$work/ca.crt" -noout -issuer -nameopt RFC2253)
+    [ "${subject#subject=}" = "${issuer#issuer=}" ] || return 1
+    # Verify that it is a self-signed root. The clock may not yet be set during
+    # network boot; normal TLS verification still checks server validity dates.
+    openssl verify -no_check_time -check_ss_sig -trusted "$work/ca.crt" \
+        "$work/ca.crt" >/dev/null 2>&1
+}
+
+install_certificate() {
+    mkdir -p /usr/local/share/ca-certificates
+    chmod 0755 /usr/local/share/ca-certificates
+    cp "$work/ca.crt" "$certificate"
+    chmod 0644 "$certificate"
+    if ! refresh_system_trust > "$work/update.log" 2>&1; then
+        rm -f "$certificate"
+        refresh_system_trust >> "$work/update.log" 2>&1 || true
+        log 'could not update the system trust store' >&2
+        return 1
+    fi
+
+    # Use the desktop user's privileges when touching its NSS database.
+    # The legacy path remains supported by Chromium, including M146+.
+    # shellcheck disable=SC2016 # This code expands in the unprivileged shell.
+    if ! su-exec netdesk:netdesk sh -eu -c '
+        db=$1
+        mkdir -p "$db"
+        if [ ! -f "$db/cert9.db" ]; then
+            certutil -N --empty-password -d "sql:$db"
+        fi
+        certutil -A -d "sql:$db" -n "NetDesk Boot CA" -t "C,," -i "$2"
+    ' sh "$nssdb" "$certificate"; then
+        rm -f "$certificate"
+        refresh_system_trust > "$work/update.log" 2>&1 || true
+        log 'could not update the desktop certificate store' >&2
+        return 1
+    fi
+}
+
+refresh_system_trust() (
+    # The updater's bundle and certificate links must be readable by apps.
+    umask 022
+    update-ca-certificates
+)
+
+# Option 43 is the sole source. HTTPS verifies against existing system trust;
+# the downloaded CA never authenticates its own download.
+if ! curl -q --fail --silent --show-error --globoff --noproxy '*' \
+    --proto '=http,https' --connect-timeout 2 --max-time 4 \
+    --max-filesize 65536 --output "$work/download" "$url" 2> "$work/curl.log"; then
+    log 'could not download the certificate from DHCP option 43; continuing normally'
+    exit 0
+fi
+if ! validate_certificate; then
+    log "rejected $url (expected one self-signed CA certificate)"
+    exit 0
+fi
+if ! install_certificate; then
+    exit 1
+fi
+printf '%s\n' "$url" > "$state/installed"
+log "installed root CA from $url for the system and desktop"

@@ -30,6 +30,9 @@ jobs:
       - name: Check shell scripts
         run: make check
 
+      - name: Test DHCP CA installation
+        run: make test-ca
+
       - name: Build EFI image
         run: make build
 

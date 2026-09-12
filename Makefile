@@ -1,11 +1,14 @@
-.PHONY: build check verify smoke
+.PHONY: build check test-ca verify smoke
 
 build:
 	./scripts/build.sh
 
 check:
 	./scripts/check.sh
-	python3 -m py_compile scripts/verify-image.py scripts/smoke-test.py
+	python3 -m py_compile scripts/verify-image.py scripts/smoke-test.py scripts/test-ca.py
+
+test-ca:
+	python3 scripts/test-ca.py
 
 verify:
 	python3 scripts/verify-image.py dist/netdesk.efi

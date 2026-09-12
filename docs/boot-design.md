@@ -94,6 +94,48 @@ HTTPS depends on the firmware or iPXE build and its trust configuration. Some
 firmware disables plain HTTP by default. Validate the intended transport and
 certificate configuration on the target fleet.
 
+## Automatic root CA installation
+
+Serve one self-signed root CA certificate in PEM or DER format and announce its
+full URL in DHCP option 43, for example:
+
+```text
+http://192.0.2.10/certs/company-root.pem
+```
+
+Send the URL as raw ASCII text in option 43, without vendor suboption encoding.
+After NetDesk obtains an IPv4 DHCP lease, its `netdesk-ca` dhcpcd hook downloads
+the certificate exclusively from this URL. HTTP and HTTPS URLs are supported;
+the path, query string, and explicit port are preserved. Downloads use direct
+requests without redirects or proxies. HTTPS uses normal certificate
+verification against the existing system trust store.
+
+Option 43 must be present in **NetDesk's Linux DHCP lease**, which is separate
+from the firmware or iPXE lease. Make it available to NetDesk's dhcpcd client,
+especially when an `HTTPClient` policy restricts options to firmware. A manually
+entered firmware or iPXE URL does not configure the CA URL for Linux.
+
+The first valid root is added to Alpine's system trust store for FreeRDP and
+other system clients, and to the `netdesk` user's NSS database for Chromium.
+The installer checks that the file contains one CA certificate with a valid
+self-signature. It installs at most one root per boot; subsequent DHCP events
+leave that root in place. If option 43 is absent or invalid, the download fails,
+or the certificate is rejected, trust stays unchanged and the desktop continues
+normally. DHCP renewals or rebinding retry the provided URL until installation
+succeeds. All added trust disappears on reboot.
+
+Import skips certificate validity dates because the clock may not yet be set
+during boot. Normal TLS connections still check CA and server validity dates,
+so ensure the system clock is correct. Applications opened before the DHCP
+lease and CA installation complete may need restarting to use the added trust.
+
+Automatic root trust assumes the DHCP/boot network is trusted.
+To disable it, add `nohook netdesk-ca` to `overlay/etc/dhcpcd.conf` before
+building. On a running desktop, `/run/netdesk-ca/installed` records the source
+URL after successful installation. Run `make test-ca` to exercise option 43 URL
+handling, HTTP download, TLS trust, and the NSS database in an isolated Docker
+container without changing the host's trust stores.
+
 ## Compatibility and limitations
 
 - **RAM capacity:** the complete unpacked system remains in RAM. Boot also needs

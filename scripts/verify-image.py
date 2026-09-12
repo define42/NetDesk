@@ -172,6 +172,8 @@ def verify_filesystem(entries, contents, kernel_version):
         "usr/bin/sudo", "usr/sbin/visudo", "usr/bin/pkexec",
         "usr/lib/polkit-1/polkitd", "usr/lib/xfce4/session/xfsm-shutdown-helper",
         "usr/local/sbin/shutdown", "sbin/poweroff", "sbin/reboot",
+        "usr/local/sbin/netdesk-install-ca", "usr/sbin/update-ca-certificates",
+        "usr/bin/curl", "usr/bin/openssl", "usr/bin/certutil",
         "etc/init.d/netdesk-desktop", "usr/local/bin/netdesk-session",
         "usr/local/bin/netdesk-xserver", "usr/local/bin/netdesk-desktop-ready",
         "usr/local/bin/netdesk-browser", "usr/local/bin/netdesk-remote-desktop",
@@ -226,6 +228,12 @@ def verify_filesystem(entries, contents, kernel_version):
     home = resolve(entries, "home/netdesk")
     require(stat.S_ISDIR(home.mode) and home.uid == home.gid == 1000,
             "/home/netdesk must be owned by the desktop user")
+    nssdb = resolve(entries, "home/netdesk/.pki/nssdb/cert9.db")
+    require(stat.S_ISREG(nssdb.mode) and nssdb.size > 0 and nssdb.uid == nssdb.gid == 1000,
+            "Chromium's NSS certificate database must exist and belong to the desktop user")
+    ca_hook = resolve(entries, "usr/lib/dhcpcd/dhcpcd-hooks/90-netdesk-ca")
+    require(stat.S_ISREG(ca_hook.mode) and ca_hook.size > 0 and ca_hook.uid == 0
+            and not ca_hook.mode & 0o022, "missing or insecure DHCP CA hook")
     sandbox = resolve(entries, "usr/lib/chromium/chrome-sandbox")
     require(stat.S_ISREG(sandbox.mode) and sandbox.uid == 0
             and sandbox.mode & stat.S_ISUID and sandbox.mode & 0o111,

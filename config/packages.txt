@@ -8,6 +8,10 @@ linux-firmware-amdgpu
 linux-firmware-rtl_nic
 kmod
 ca-certificates
+# Fetch and validate DHCP-provided CAs, including Chromium's NSS trust store.
+curl
+openssl
+nss-tools
 eudev
 eudev-openrc
 dbus
