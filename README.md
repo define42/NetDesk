@@ -92,6 +92,9 @@ sudo shutdown -h now
 sudo reboot
 ```
 
+Vim and Nano are included. Open a file with `vim filename` or `nano filename`;
+use `sudo vim` or `sudo nano` when editing system configuration.
+
 `sudo poweroff` also shuts down, and `sudo shutdown -r now` restarts. NetDesk's
 `shutdown` command supports immediate actions with `now` or `+0`; scheduled
 shutdown is not implemented. Shutdown and reboot discard all session data.

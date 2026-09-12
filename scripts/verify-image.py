@@ -163,6 +163,7 @@ def verify_filesystem(entries, contents, kernel_version):
         "usr/bin/xfce4-keyboard-settings", "usr/bin/xfsettingsd",
         "usr/bin/xinit", "usr/bin/xauth", "usr/bin/xprop", "usr/bin/xrandr",
         "usr/bin/mcookie", "usr/bin/pgrep",
+        "usr/bin/vim", "usr/bin/nano",
         "usr/bin/sudo", "usr/sbin/visudo", "usr/bin/pkexec",
         "usr/lib/polkit-1/polkitd", "usr/lib/xfce4/session/xfsm-shutdown-helper",
         "usr/local/sbin/shutdown", "sbin/poweroff", "sbin/reboot",

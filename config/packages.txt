@@ -46,4 +46,6 @@ adwaita-xfce-icon-theme
 adw-gtk3
 chromium
 freerdp
+vim
+nano
 font-dejavu
