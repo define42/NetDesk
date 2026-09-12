@@ -1,0 +1,31 @@
+# Alpine main + community packages installed into the in-memory desktop.
+alpine-base
+linux-lts
+# Avoid the all-hardware firmware metapackage; add device firmware here as needed.
+linux-firmware-none
+linux-firmware-i915
+linux-firmware-amdgpu
+linux-firmware-rtl_nic
+kmod
+ca-certificates
+eudev
+eudev-openrc
+dbus
+dbus-openrc
+dhcpcd
+dhcpcd-openrc
+seatd
+seatd-openrc
+su-exec
+mesa-dri-gallium
+mesa-egl
+weston
+weston-backend-drm
+weston-shell-desktop
+weston-terminal
+weston-xwayland
+xwayland
+wayland-utils
+chromium
+freerdp
+font-dejavu

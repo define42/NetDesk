@@ -1,0 +1,7 @@
+::sysinit:/sbin/openrc sysinit
+::wait:/sbin/openrc boot
+::wait:/sbin/openrc default
+::ctrlaltdel:/sbin/reboot
+::shutdown:/sbin/openrc shutdown
+
+# The desktop is started as netdesk by OpenRC. No login or getty is needed.

@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+if [ "$(id -u)" -ne 1000 ]; then
+    printf '%s\n' 'NetDesk desktop must run as the netdesk user (UID 1000).' >&2
+    exit 1
+fi
+
+export HOME=/home/netdesk
+export USER=netdesk LOGNAME=netdesk
+export XDG_RUNTIME_DIR=/run/user/1000
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=Weston
+export LIBSEAT_BACKEND=seatd
+umask 077
+mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+cd "$HOME"
+
+exec dbus-run-session -- weston \
+    --config=/etc/xdg/weston/weston.ini \
+    --socket=wayland-0 --log="$XDG_RUNTIME_DIR/weston.log"

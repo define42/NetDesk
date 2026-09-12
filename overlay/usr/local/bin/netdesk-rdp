@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+printf '\033]0;NetDesk Remote Desktop\007'
+printf '%s\n\n' 'Connect to a remote desktop'
+printf '%s' 'Computer (hostname or IP, optionally :port): '
+IFS= read -r server
+[ -n "$server" ] || exit 0
+printf '%s' 'User (DOMAIN\user or user@example.com): '
+IFS= read -r username
+[ -n "$username" ] || exit 0
+
+# FreeRDP reads the password directly; never put it in arguments or a file.
+# Its default certificate verification and interactive prompts remain enabled.
+printf '\n%s\n' 'FreeRDP will ask for your password and verify the server certificate.'
+status=0
+xfreerdp3 "/v:$server" "/u:$username" /from-stdin:force \
+    +dynamic-resolution +clipboard +force-console-callbacks || status=$?
+printf '\nRemote desktop closed (status %s). Press Enter to close this window.' "$status"
+IFS= read -r _ || :

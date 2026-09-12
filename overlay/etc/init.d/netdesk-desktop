@@ -1,0 +1,46 @@
+#!/sbin/openrc-run
+# OpenRC reads these service configuration variables.
+# shellcheck disable=SC2034
+
+description="NetDesk graphical desktop"
+supervisor="supervise-daemon"
+command="/usr/local/bin/netdesk-session"
+command_user="netdesk:netdesk"
+directory="/home/netdesk"
+output_log="/var/log/netdesk-session.log"
+error_log="/var/log/netdesk-session.log"
+respawn_delay=3
+respawn_max=5
+respawn_period=60
+
+depend() {
+    need dbus seatd udev-settle
+    after bootmisc
+}
+
+start_pre() {
+    checkpath --directory --mode 0755 /run/user || return 1
+    checkpath --directory --owner netdesk:netdesk --mode 0700 /run/user/1000 || return 1
+    checkpath --directory --owner root:root --mode 1777 /tmp/.X11-unix || return 1
+    checkpath --file --owner netdesk:netdesk --mode 0600 /var/log/netdesk-session.log || return 1
+}
+
+start_post() {
+    # A socket alone does not establish that the compositor has a usable output.
+    # Probe as the desktop user, then report readiness on the boot console.
+    attempt=0
+    globals=
+    while [ "$attempt" -lt 45 ]; do
+        if globals=$(timeout 3 su-exec netdesk:netdesk env \
+            XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-0 \
+            wayland-info 2>/dev/null) &&
+            printf '%s\n' "$globals" | grep -q "interface: 'wl_output'"; then
+            printf '%s\n' 'NetDesk desktop ready' > /dev/console
+            return 0
+        fi
+        attempt=$((attempt + 1))
+        sleep 1
+    done
+    eerror "Weston did not produce a Wayland output; see /run/user/1000/weston.log"
+    return 1
+}

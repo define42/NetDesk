@@ -1,0 +1,1 @@
+# All filesystems are in RAM and are mounted by /init. No local disks or swap.

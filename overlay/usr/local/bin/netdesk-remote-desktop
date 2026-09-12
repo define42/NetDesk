@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+
+exec weston-terminal --shell=/usr/local/bin/netdesk-rdp

@@ -1,0 +1,29 @@
+#!/bin/sh
+# The kernel unpacks the entire desktop into RAM before starting this script.
+set -eu
+
+boot_failed() {
+    printf '\n%s\n' 'NetDesk could not initialize its in-memory filesystems.' > /dev/console
+    printf '%s\n' 'Restart the machine and inspect the boot log.' > /dev/console
+    while :; do sleep 3600; done
+}
+trap boot_failed EXIT
+
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+mkdir -p /proc /sys /dev /run /tmp
+mount -t proc -o nosuid,nodev,noexec proc /proc
+mount -t sysfs -o nosuid,nodev,noexec sysfs /sys
+mount -t devtmpfs -o nosuid,mode=0755 devtmpfs /dev
+mkdir -p /dev/pts /dev/shm
+mount -t devpts -o nosuid,noexec,gid=5,mode=0620,ptmxmode=0666 devpts /dev/pts
+mount -t tmpfs -o nosuid,nodev,mode=0755,size=64m tmpfs /run
+mount -t tmpfs -o nosuid,nodev,mode=1777,size=25% tmpfs /tmp
+mount -t tmpfs -o nosuid,nodev,noexec,mode=1777,size=25% tmpfs /dev/shm
+ln -sf /proc/self/fd /dev/fd
+ln -sf /proc/self/fd/0 /dev/stdin
+ln -sf /proc/self/fd/1 /dev/stdout
+ln -sf /proc/self/fd/2 /dev/stderr
+mkdir -p /run/openrc
+
+# No disk discovery, root-device mount, swap, or persistent state is required.
+exec /sbin/init
