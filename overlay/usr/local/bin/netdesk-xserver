@@ -16,9 +16,13 @@ su-exec netdesk:netdesk rm -f "$client_authority"
 cookie=$(mcookie)
 printf 'add :0 MIT-MAGIC-COOKIE-1 %s\n' "$cookie" | \
     xauth -f "$server_authority" source -
-printf 'add :0 MIT-MAGIC-COOKIE-1 %s\n' "$cookie" | \
-    su-exec netdesk:netdesk xauth -f "$client_authority" source -
-unset cookie
+# FamilyWild lets local clients find the cookie after DHCP changes the hostname.
+# Xorg still requires the cookie and accepts no TCP connections.
+authority_entry=$(xauth -f "$server_authority" nlist | sed 's/^..../ffff/')
+printf '%s\n' "$authority_entry" | xauth -f "$server_authority" nmerge -
+printf '%s\n' "$authority_entry" | \
+    su-exec netdesk:netdesk xauth -f "$client_authority" nmerge -
+unset cookie authority_entry
 export XAUTHORITY="$server_authority"
 
 # Only the X server retains root privileges. The client script switches to

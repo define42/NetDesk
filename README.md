@@ -125,10 +125,12 @@ shutdown is not implemented. Shutdown and reboot discard all session data.
 - [`config/cmdline`](config/cmdline): embedded kernel arguments, including serial
   console output for diagnostics.
 
-Wired networking uses DHCP on `eth*` and `en*` interfaces. The default firmware
-selection covers i915, AMDGPU, and Realtek Ethernet; support still depends on the
-hardware generation and kernel. Add other firmware for your devices. Wi-Fi
-provisioning and proprietary NVIDIA drivers are not configured in this version.
+Wired networking uses DHCP on `eth*` and `en*` interfaces and adopts the hostname
+supplied by the DHCP server, falling back to `netdesk` when none is supplied.
+The default firmware selection covers i915, AMDGPU, and Realtek Ethernet; support
+still depends on the hardware generation and kernel. Add other firmware for your
+devices. Wi-Fi provisioning and proprietary NVIDIA drivers are not configured in
+this version.
 
 ## Validate and diagnose
 
