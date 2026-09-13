@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: netdesk-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: netdesk-${{ github.workflow }}-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'latest' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
@@ -53,7 +53,7 @@ jobs:
           retention-days: 14
 
   release:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-24.04
     permissions:
@@ -68,16 +68,10 @@ jobs:
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ github.ref_name }}
         run: |
-          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" dist/netdesk.efi \
-              --clobber \
-              --repo "$GITHUB_REPOSITORY"
-          else
-            gh release create "$TAG_NAME" dist/netdesk.efi \
-              --generate-notes \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "NetDesk $TAG_NAME" \
-              --verify-tag
-          fi
+          VERSION="$(date -u +'%Y%m%d%H%M%S')"
+          gh release create "$VERSION" dist/netdesk.efi \
+            --generate-notes \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "NetDesk $VERSION"
