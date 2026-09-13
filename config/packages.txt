@@ -63,6 +63,9 @@ freerdp
 # Office suite with GTK integration for XFCE.
 libreoffice
 libreoffice-gtk
+# Command-line remote access and network diagnostics.
+openssh-client-default
+nmap
 vim
 nano
 font-dejavu
