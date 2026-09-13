@@ -33,6 +33,9 @@ jobs:
       - name: Test DHCP CA installation
         run: make test-ca
 
+      - name: Test DHCP NTP configuration
+        run: make test-ntp
+
       - name: Build EFI image
         run: make build
 

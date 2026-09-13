@@ -18,6 +18,8 @@ dbus
 dbus-openrc
 dhcpcd
 dhcpcd-openrc
+# OpenRC service for the BusyBox NTP client, started by DHCP option 42.
+busybox-openrc
 su-exec
 # The desktop account has passwordless administration and native power actions.
 sudo

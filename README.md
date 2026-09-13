@@ -151,6 +151,11 @@ shutdown is not implemented. Shutdown and reboot discard all session data.
 
 Wired networking uses DHCP on `eth*` and `en*` interfaces and adopts the hostname
 supplied by the DHCP server, falling back to `netdesk` when none is supplied.
+NetDesk requests NTP servers through **DHCP option 42** and starts time
+synchronization when the lease supplies them. Lease changes update the server
+list; losing the last announced server stops synchronization. No public NTP
+fallback is configured. The desktop can start while synchronization is pending.
+
 The default firmware selection covers i915, AMDGPU, and Realtek Ethernet; support
 still depends on the hardware generation and kernel. Add other firmware for your
 devices. Wi-Fi provisioning and proprietary NVIDIA drivers are not configured in
@@ -163,6 +168,7 @@ On Ubuntu, install `shellcheck`, `python3`, `qemu-system-x86`, and `ovmf`, then 
 ```sh
 make check
 make test-ca
+make test-ntp
 make verify
 make smoke
 ```
@@ -170,6 +176,10 @@ make smoke
 `test-ca` uses an isolated Docker container to check option 43 URL handling and
 CA installation with HTTP, TLS, and Chromium's NSS trust database. It does not
 change the host's trust stores.
+
+`test-ntp` checks DHCP option 42 decoding, server updates, and NTP client startup
+and shutdown in an isolated Docker container. It runs the client in query mode
+and does not change the host's clock.
 
 `verify` inspects the EFI sections and embedded filesystem. `smoke` serves the
 actual image over local HTTP and boots it with QEMU and UEFI firmware, without
@@ -184,3 +194,7 @@ On a running desktop, Xorg diagnostics are in
 `/var/log/netdesk-session.log`. After a successful CA installation,
 `/run/netdesk-ca/installed` records the certificate's source URL. These files also
 disappear on reboot.
+
+For time synchronization diagnostics, run `cat /etc/ntp.conf` to see the current
+servers and `sudo rc-service ntpd status` to check whether the client is running.
+A running client does not by itself confirm that the clock has synchronized.

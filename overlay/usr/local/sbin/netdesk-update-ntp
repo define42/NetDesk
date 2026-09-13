@@ -1,0 +1,11 @@
+#!/bin/sh
+# Called by dhcpcd's ntp.conf hook after the merged server list changes.
+set -eu
+
+# BusyBox ntpd exits without peers. Start it on the first lease and stop it
+# when the last interface loses its servers. No public fallback is configured.
+# Skip OpenRC dependencies: dhcpcd may still be starting the net provider.
+if grep -Eq '^[[:space:]]*server[[:space:]]+[^#[:space:]]' /etc/ntp.conf; then
+    exec /sbin/rc-service --nodeps ntpd restart
+fi
+exec /sbin/rc-service --nodeps --ifstarted ntpd stop

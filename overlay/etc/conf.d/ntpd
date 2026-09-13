@@ -1,0 +1,2 @@
+# Read DHCP-provided servers from /etc/ntp.conf; -p would override that file.
+NTPD_OPTS="-N"

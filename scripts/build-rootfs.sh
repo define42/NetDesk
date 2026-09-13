@@ -52,6 +52,8 @@ chroot "$root" update-desktop-database /usr/share/applications
 chmod 0755 "$root/init" "$root"/etc/init.d/netdesk-* "$root"/usr/local/bin/netdesk-*
 chmod 0755 "$root/usr/local/sbin/shutdown"
 chmod 0755 "$root/usr/local/sbin/netdesk-install-ca"
+chmod 0755 "$root/usr/local/sbin/netdesk-update-ntp"
+chmod 0644 "$root/etc/ntp.conf" "$root/etc/conf.d/ntpd"
 chmod 0644 "$root/usr/lib/dhcpcd/dhcpcd-hooks/90-netdesk-ca"
 chmod 0440 "$root/etc/sudoers.d/netdesk"
 chmod 0644 "$root/etc/polkit-1/rules.d/49-netdesk-power.rules"
@@ -78,6 +80,7 @@ done
 for service in dbus dhcpcd netdesk-desktop; do
     chroot "$root" rc-update add "$service" default
 done
+# ntpd is started by dhcpcd after option 42 supplies peers; it cannot run empty.
 chroot "$root" rc-update add killprocs shutdown
 
 set -- "$root"/lib/modules/*

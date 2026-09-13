@@ -104,7 +104,7 @@ def section_text(image, section):
 def read_archive(stream):
     entries = {}
     contents = {}
-    capture = {"init", "etc/passwd", "etc/inittab"}
+    capture = {"init", "etc/passwd", "etc/inittab", "etc/dhcpcd.conf", "etc/conf.d/ntpd"}
     while True:
         header = read_exact(stream, 110)
         require(header[:6] == b"070701", "initramfs must use the newc cpio format")
@@ -173,6 +173,7 @@ def verify_filesystem(entries, contents, kernel_version):
         "usr/lib/polkit-1/polkitd", "usr/lib/xfce4/session/xfsm-shutdown-helper",
         "usr/local/sbin/shutdown", "sbin/poweroff", "sbin/reboot",
         "usr/local/sbin/netdesk-install-ca", "usr/sbin/update-ca-certificates",
+        "usr/local/sbin/netdesk-update-ntp", "usr/sbin/ntpd", "etc/init.d/ntpd",
         "usr/bin/curl", "usr/bin/openssl", "usr/bin/certutil",
         "etc/init.d/netdesk-desktop", "usr/local/bin/netdesk-session",
         "usr/local/bin/netdesk-xserver", "usr/local/bin/netdesk-desktop-ready",
@@ -234,6 +235,19 @@ def verify_filesystem(entries, contents, kernel_version):
     ca_hook = resolve(entries, "usr/lib/dhcpcd/dhcpcd-hooks/90-netdesk-ca")
     require(stat.S_ISREG(ca_hook.mode) and ca_hook.size > 0 and ca_hook.uid == 0
             and not ca_hook.mode & 0o022, "missing or insecure DHCP CA hook")
+    for name in ("usr/lib/dhcpcd/dhcpcd-hooks/50-ntp.conf", "etc/ntp.conf",
+                 "etc/conf.d/ntpd", "usr/local/sbin/netdesk-update-ntp"):
+        entry = resolve(entries, name)
+        require(stat.S_ISREG(entry.mode) and entry.size > 0 and entry.uid == 0
+                and not entry.mode & 0o022, f"missing or insecure NTP configuration /{name}")
+    dhcpcd = contents.get("etc/dhcpcd.conf", "")
+    require(re.search(r"^option\s+ntp_servers\s*$", dhcpcd, re.MULTILINE),
+            "DHCP must request NTP servers (option 42)")
+    for setting in ("env NTP_CONF=/etc/ntp.conf",
+                    "env ntp_restart_cmd=/usr/local/sbin/netdesk-update-ntp"):
+        require(setting in dhcpcd.splitlines(), "DHCP must manage the NTP client")
+    require('NTPD_OPTS="-N"' in contents.get("etc/conf.d/ntpd", "").splitlines(),
+            "NTP client must read DHCP servers from /etc/ntp.conf without a -p override")
     sandbox = resolve(entries, "usr/lib/chromium/chrome-sandbox")
     require(stat.S_ISREG(sandbox.mode) and sandbox.uid == 0
             and sandbox.mode & stat.S_ISUID and sandbox.mode & 0o111,
