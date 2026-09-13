@@ -47,7 +47,6 @@ jobs:
         with:
           name: netdesk-efi
           path: dist/netdesk.efi
-          archive: false
           compression-level: 0
           if-no-files-found: error
           retention-days: 14
