@@ -38,7 +38,8 @@ The base container is pinned by digest; packages receive updates from Alpine's
 [GitHub Actions](.github/workflows/build.yml) runs on pushes, pull requests, and
 manual dispatch. It checks the scripts, builds and verifies the image, boots it
 over HTTP in a diskless UEFI VM, and uploads only `netdesk.efi` after success.
-Download that file from the workflow's artifacts and place it on your boot server.
+Tag builds also attach `netdesk.efi` to a GitHub Release named for the tag. Download
+the file from the release or workflow artifacts and place it on your boot server.
 
 ## Boot
 
