@@ -1,9 +1,9 @@
 # NetDesk
 
 NetDesk is a stateless Linux desktop that boots from the network into XFCE,
-with Chromium, FreeRDP, LibreOffice, a file manager, and a terminal. It uses Alpine
-Linux and runs entirely from RAM. No installation, local disk, or persistent
-storage is required.
+with Chromium, FreeRDP, LibreOffice, SSH and network diagnostics, a file manager,
+and a terminal. It uses Alpine Linux and runs entirely from RAM. No installation,
+local disk, or persistent storage is required.
 
 The build produces one deployable file: **`dist/netdesk.efi`**. This x86-64 UEFI
 executable contains the Linux kernel, initramfs, complete root filesystem,
@@ -38,7 +38,9 @@ The base container is pinned by digest; packages receive updates from Alpine's
 [GitHub Actions](.github/workflows/build.yml) runs on pushes, pull requests, and
 manual dispatch. It checks the scripts, builds and verifies the image, boots it
 over HTTP in a diskless UEFI VM, and uploads only `netdesk.efi` after success.
-Download that file from the workflow's artifacts and place it on your boot server.
+Each successful push to `main` also attaches `netdesk.efi` to a GitHub Release
+whose version is its UTC build timestamp. Download the file from the release or
+workflow artifacts and place it on your boot server.
 
 ## Boot
 
@@ -132,7 +134,8 @@ sudo shutdown -h now
 sudo reboot
 ```
 
-Vim and Nano are included. Open a file with `vim filename` or `nano filename`;
+The OpenSSH client and Nmap are available from Terminal as `ssh` and `nmap`.
+Vim and Nano are also included. Open a file with `vim filename` or `nano filename`;
 use `sudo vim` or `sudo nano` when editing system configuration.
 
 `sudo poweroff` also shuts down, and `sudo shutdown -r now` restarts. NetDesk's

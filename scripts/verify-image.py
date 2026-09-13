@@ -165,7 +165,7 @@ def verify_filesystem(entries, contents, kernel_version):
         "usr/bin/start-pulseaudio-x11", "usr/bin/pavucontrol",
         "usr/bin/xinit", "usr/bin/xauth", "usr/bin/xprop", "usr/bin/xrandr",
         "usr/bin/mcookie", "usr/bin/pgrep",
-        "usr/bin/vim", "usr/bin/nano",
+        "usr/bin/ssh", "usr/bin/nmap", "usr/bin/vim", "usr/bin/nano",
         "usr/bin/libreoffice", "usr/lib/libreoffice/program/soffice.bin",
         "usr/bin/lowriter", "usr/bin/localc", "usr/bin/loimpress",
         "usr/bin/lodraw", "usr/bin/lobase", "usr/bin/lomath",
